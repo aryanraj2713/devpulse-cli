@@ -1,7 +1,8 @@
 """Main entry point for DevPulse CLI."""
 
 import typer
-from devpulse.commands import latency, port, curl
+
+from devpulse.commands import curl, latency, port
 
 app = typer.Typer(
     name="devpulse",

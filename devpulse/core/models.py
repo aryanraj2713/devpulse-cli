@@ -1,16 +1,15 @@
 """Pydantic models for DevPulse."""
 
-from typing import Optional
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, Field
 
 
 class LatencyResult(BaseModel):
     """Model for latency test result."""
 
     url: str
-    status_code: Optional[int] = None
-    response_time_ms: Optional[float] = None
-    error: Optional[str] = None
+    status_code: int | None = None
+    response_time_ms: float | None = None
+    error: str | None = None
 
     @property
     def is_success(self) -> bool:
@@ -35,8 +34,8 @@ class CurlRequest(BaseModel):
     url: str
     method: str = "GET"
     headers: dict[str, str] = Field(default_factory=dict)
-    data: Optional[str] = None
-    json_data: Optional[dict] = None
+    data: str | None = None
+    json_data: dict | None = None
 
 
 class PortProcess(BaseModel):

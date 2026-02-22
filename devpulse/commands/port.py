@@ -1,15 +1,13 @@
 """Port management command."""
 
-import typer
 import psutil
-import signal
-import sys
-from typing import Optional
+import typer
+
+from devpulse.core.formatter import print_error, print_info, print_success
 from devpulse.core.models import PortProcess
-from devpulse.core.formatter import print_success, print_error, print_info
 
 
-def find_process_by_port(port: int) -> Optional[PortProcess]:
+def find_process_by_port(port: int) -> PortProcess | None:
     """Find process using specified port.
 
     Args:
@@ -18,16 +16,12 @@ def find_process_by_port(port: int) -> Optional[PortProcess]:
     Returns:
         PortProcess if found, None otherwise
     """
-    for proc in psutil.process_iter(['pid', 'name']):
+    for proc in psutil.process_iter(["pid", "name"]):
         try:
             connections = proc.net_connections()
             for conn in connections:
                 if conn.laddr.port == port:
-                    return PortProcess(
-                        pid=proc.info['pid'],
-                        name=proc.info['name'],
-                        port=port
-                    )
+                    return PortProcess(pid=proc.info["pid"], name=proc.info["name"], port=port)
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
@@ -62,7 +56,7 @@ def kill_process(pid: int, force: bool = False) -> bool:
             return kill_process(pid, force=True)
         return False
     except psutil.AccessDenied:
-        raise PermissionError(f"Permission denied to kill process {pid}")
+        raise PermissionError(f"Permission denied to kill process {pid}") from None
 
 
 def kill_command(
@@ -99,7 +93,7 @@ def kill_command(
     except PermissionError as e:
         print_error(str(e))
         print_info("Try running with sudo/administrator privileges")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except Exception as e:
-        print_error(f"Error: {str(e)}")
-        raise typer.Exit(1)
+        print_error(f"Error: {e}")
+        raise typer.Exit(1) from None

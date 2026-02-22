@@ -1,16 +1,19 @@
 """Curl to code converter command."""
 
-import typer
+import contextlib
 import json
 import shlex
-from typing import Optional
-from enum import Enum
+from enum import StrEnum
+
+import typer
+
+from devpulse.core.formatter import console, print_error
 from devpulse.core.models import CurlRequest
-from devpulse.core.formatter import print_error, console
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     """Supported output languages."""
+
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     JS = "js"
@@ -30,14 +33,14 @@ def parse_curl_command(curl_str: str) -> CurlRequest:
     """
     # Remove 'curl' prefix if present
     curl_str = curl_str.strip()
-    if curl_str.startswith('curl '):
+    if curl_str.startswith("curl "):
         curl_str = curl_str[5:]
 
     # Parse using shlex to handle quotes properly
     try:
         parts = shlex.split(curl_str)
     except ValueError as e:
-        raise ValueError(f"Failed to parse curl command: {e}")
+        raise ValueError(f"Failed to parse curl command: {e}") from e
 
     url = None
     method = "GET"
@@ -49,33 +52,30 @@ def parse_curl_command(curl_str: str) -> CurlRequest:
     while i < len(parts):
         part = parts[i]
 
-        if part in ['-X', '--request']:
+        if part in ["-X", "--request"]:
             if i + 1 < len(parts):
                 method = parts[i + 1].upper()
                 i += 2
                 continue
 
-        elif part in ['-H', '--header']:
+        elif part in ["-H", "--header"]:
             if i + 1 < len(parts):
                 header = parts[i + 1]
-                if ':' in header:
-                    key, value = header.split(':', 1)
+                if ":" in header:
+                    key, value = header.split(":", 1)
                     headers[key.strip()] = value.strip()
                 i += 2
                 continue
 
-        elif part in ['-d', '--data', '--data-raw']:
+        elif part in ["-d", "--data", "--data-raw"]:
             if i + 1 < len(parts):
                 data = parts[i + 1]
-                # Try to parse as JSON
-                try:
+                with contextlib.suppress(json.JSONDecodeError):
                     json_data = json.loads(data)
-                except json.JSONDecodeError:
-                    pass
                 i += 2
                 continue
 
-        elif part.startswith('http://') or part.startswith('https://'):
+        elif part.startswith("http://") or part.startswith("https://"):
             url = part
             i += 1
             continue
@@ -92,11 +92,7 @@ def parse_curl_command(curl_str: str) -> CurlRequest:
         method = "POST"
 
     return CurlRequest(
-        url=url,
-        method=method,
-        headers=headers,
-        data=data if not json_data else None,
-        json_data=json_data
+        url=url, method=method, headers=headers, data=data if not json_data else None, json_data=json_data
     )
 
 
@@ -151,37 +147,37 @@ def generate_javascript_code(request: CurlRequest) -> str:
 
     # Build options object
     options = {}
-    options['method'] = request.method
+    options["method"] = request.method
 
     if request.headers:
-        options['headers'] = request.headers
+        options["headers"] = request.headers
 
     if request.json_data:
-        options['headers'] = options.get('headers', {})
-        options['headers']['Content-Type'] = 'application/json'
-        options['body'] = json.dumps(request.json_data)
+        options["headers"] = options.get("headers", {})
+        options["headers"]["Content-Type"] = "application/json"
+        options["body"] = json.dumps(request.json_data)
     elif request.data:
-        options['body'] = request.data
+        options["body"] = request.data
 
     lines.append(f'fetch("{request.url}", {{')
 
     for key, value in options.items():
-        if key == 'headers':
-            lines.append(f'  {key}: {{')
+        if key == "headers":
+            lines.append(f"  {key}: {{")
             for hkey, hvalue in value.items():
                 lines.append(f'    "{hkey}": "{hvalue}",')
-            lines.append('  },')
-        elif key == 'body':
-            if isinstance(value, str) and value.startswith('{'):
-                lines.append(f'  {key}: {value},')
+            lines.append("  },")
+        elif key == "body":
+            if isinstance(value, str) and value.startswith("{"):
+                lines.append(f"  {key}: {value},")
             else:
                 lines.append(f'  {key}: "{value}",')
         else:
             lines.append(f'  {key}: "{value}",')
 
-    lines.append('})')
-    lines.append('  .then(response => response.json())')
-    lines.append('  .then(data => console.log(data))')
+    lines.append("})")
+    lines.append("  .then(response => response.json())")
+    lines.append("  .then(data => console.log(data))")
     lines.append('  .catch(error => console.error("Error:", error));')
 
     return "\n".join(lines)
@@ -201,7 +197,7 @@ def curl_command(
         request = parse_curl_command(curl_str)
     except ValueError as e:
         print_error(str(e))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     # Normalize language
     if lang in [Language.JS, Language.JAVASCRIPT]:
@@ -216,6 +212,7 @@ def curl_command(
 
     # Syntax highlighting based on language
     from rich.syntax import Syntax
+
     syntax = Syntax(code, lang_name.lower(), theme="monokai", line_numbers=False)
     console.print(syntax)
 

@@ -2,8 +2,8 @@
 
 from rich.console import Console
 from rich.table import Table
-from rich.style import Style
-from devpulse.core.models import LatencyResult, LatencyStats
+
+from devpulse.core.models import LatencyStats
 
 console = Console()
 
@@ -39,26 +39,16 @@ def print_latency_results(stats: LatencyStats) -> None:
 
     for result in stats.results:
         if result.error:
-            table.add_row(
-                result.url,
-                "ERROR",
-                result.error,
-                style="red"
-            )
+            table.add_row(result.url, "ERROR", result.error, style="red")
         else:
             time_str = f"{result.response_time_ms:.0f}" if result.response_time_ms else "N/A"
             color = get_latency_color(result.response_time_ms) if result.response_time_ms else "white"
 
-            table.add_row(
-                result.url,
-                str(result.status_code),
-                time_str,
-                style=color
-            )
+            table.add_row(result.url, str(result.status_code), time_str, style=color)
 
     console.print(table)
     console.print()
-    console.print(f"[bold]Statistics:[/bold]")
+    console.print("[bold]Statistics:[/bold]")
     console.print(f"  Average: [yellow]{stats.avg_latency_ms:.0f}ms[/yellow]")
     console.print(f"  Fastest: [green]{stats.fastest_ms:.0f}ms[/green]")
     console.print(f"  Slowest: [red]{stats.slowest_ms:.0f}ms[/red]")

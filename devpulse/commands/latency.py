@@ -1,11 +1,11 @@
 """API latency testing command."""
 
-import typer
 import requests
-from typing import Optional
+import typer
+
+from devpulse.core.formatter import print_error, print_latency_results
 from devpulse.core.models import LatencyResult, LatencyStats
-from devpulse.core.utils import timer, parse_urls
-from devpulse.core.formatter import print_latency_results, print_error
+from devpulse.core.utils import parse_urls, timer
 
 
 def test_url(url: str, timeout: int = 10) -> LatencyResult:
@@ -22,11 +22,7 @@ def test_url(url: str, timeout: int = 10) -> LatencyResult:
         with timer() as elapsed:
             response = requests.get(url, timeout=timeout)
 
-        return LatencyResult(
-            url=url,
-            status_code=response.status_code,
-            response_time_ms=elapsed[0]
-        )
+        return LatencyResult(url=url, status_code=response.status_code, response_time_ms=elapsed[0])
     except requests.exceptions.Timeout:
         return LatencyResult(url=url, error="Timeout")
     except requests.exceptions.ConnectionError:
@@ -37,7 +33,7 @@ def test_url(url: str, timeout: int = 10) -> LatencyResult:
         return LatencyResult(url=url, error=f"Unexpected error: {str(e)}")
 
 
-def calculate_stats(results: list[LatencyResult]) -> Optional[LatencyStats]:
+def calculate_stats(results: list[LatencyResult]) -> LatencyStats | None:
     """Calculate statistics from latency results.
 
     Args:
@@ -59,7 +55,7 @@ def calculate_stats(results: list[LatencyResult]) -> Optional[LatencyStats]:
         fastest_ms=min(times),
         slowest_ms=max(times),
         success_count=len(successful),
-        total_count=len(results)
+        total_count=len(results),
     )
 
 

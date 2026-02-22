@@ -1,8 +1,8 @@
 """Utility functions for DevPulse."""
 
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 
 @contextmanager
@@ -33,9 +33,9 @@ def parse_urls(input_str: str) -> list[str]:
     """
     # Check if it's a file
     try:
-        with open(input_str, 'r') as f:
+        with open(input_str) as f:
             urls = [line.strip() for line in f if line.strip()]
             return urls
-    except (FileNotFoundError, IOError):
+    except (OSError, FileNotFoundError):
         # Treat as comma-separated URLs
-        return [url.strip() for url in input_str.split(',') if url.strip()]
+        return [url.strip() for url in input_str.split(",") if url.strip()]
