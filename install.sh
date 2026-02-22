@@ -1,12 +1,21 @@
 #!/bin/bash
 set -e
 
+REPO="git+https://github.com/aryanraj2713/devpulse-cli.git"
+
+# Detect if running inside the project directory or remotely
+if [ -f "pyproject.toml" ] && grep -q "devpulse-cli" pyproject.toml 2>/dev/null; then
+    SOURCE="."
+else
+    SOURCE="$REPO"
+fi
+
 echo "📦 Installing DevPulse..."
 
 # Check if uv is installed
 if command -v uv &> /dev/null; then
     echo "✓ Found uv"
-    uv tool install .
+    uv tool install "$SOURCE"
     echo "✓ DevPulse installed with uv tool"
     echo ""
     echo "Run: devpulse --help"
@@ -16,7 +25,7 @@ fi
 # Check if pipx is installed
 if command -v pipx &> /dev/null; then
     echo "✓ Found pipx"
-    pipx install .
+    pipx install "$SOURCE"
     echo "✓ DevPulse installed with pipx"
     echo ""
     echo "Run: devpulse --help"
@@ -26,7 +35,7 @@ fi
 # Fallback to pip
 if command -v pip &> /dev/null; then
     echo "⚠ Using pip (consider installing uv or pipx for isolated installs)"
-    pip install -e .
+    pip install "$SOURCE"
     echo "✓ DevPulse installed with pip"
     echo ""
     echo "Run: devpulse --help"
