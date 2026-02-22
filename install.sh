@@ -1,4 +1,5 @@
 #!/bin/bash
+# DevPulse CLI installer
 set -e
 
 REPO="git+https://github.com/aryanraj2713/devpulse-cli.git"
